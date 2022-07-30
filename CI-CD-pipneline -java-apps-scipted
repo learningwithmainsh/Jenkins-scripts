@@ -1,0 +1,25 @@
+node {
+def maven_home =tool name : "maven3.8.6"
+stage('CheckoutCode')
+{
+git credentialsId: '7ad84d5e-3dbc-4ea1-bca3-fddf3a707400', url: 'https://github.com/learningwithmainsh/maven-web-application.git'
+}
+stage('Build'){
+sh "${maven_home}/bin/mvn clean package "
+}
+stage('Sonar'){
+sh "${maven_home}/bin/mvn sonar:sonar"
+}
+
+stage('Nexus') {
+sh "${maven_home}/bin/mvn clean deploy "
+}
+stage('Deploy_Tomcat')
+{
+sshagent(['cf1bd8e7-a176-4808-8018-f37662a89836'])
+{
+sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@13.235.87.168:/opt/apache-tomcat-9.0.64/webapps/"
+}
+}
+
+}

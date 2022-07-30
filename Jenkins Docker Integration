@@ -1,0 +1,27 @@
+node{
+    def buildNumber = BUILD_NUMBER
+    stage('git clone'){
+        git url: 'https://github.com/learningwithmainsh/java-web-app-docker.git'
+    }
+
+stage('maven clean package'){
+    def mavenHome= tool name: "Maven",type: "maven"
+sh "${mavenHome}/bin/mvn clean package"
+}
+stage('Docker Image build'){
+    
+    sh "docker build -t manishgenius/java-web-app:${buildNumber} ."
+}
+stage('Docker login and Push'){
+     
+    sh "docker login  -u  manishgenius -p Smu#12345 "
+    sh " docker push manishgenius/java-web-app:${buildNumber} "
+    
+}
+stage('Deploy Application as container in deployment Server'){
+    sshagent(['Docker_deployment_server']) {
+    sh " ssh -o StrictHostKeyChecking=no ubuntu@172.31.12.62 docker rm -f javaappcontainer || true "
+    sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.12.62 docker run -d --name javaappcontainer -p 8080:8080 manishgenius/java-web-app:${buildNumber}  "
+}
+}
+}
